@@ -5461,3 +5461,297 @@ document.addEventListener('DOMContentLoaded',()=>{setTimeout(finalRunAll,700);se
   window.addEventListener('pageshow', function(){ setTimeout(run, 250); });
   window.rmRevisionOkFinal = run;
 })();
+
+
+/* FIX DEFINITIVO HAZTE SOCIO DUPLICADO */
+(function(){
+ if(window.__RM_SOCIO_DUPLICADO_DEFINITIVO__)return;
+ window.__RM_SOCIO_DUPLICADO_DEFINITIVO__=true;
+ function txt(e){return String(e&&e.textContent||'').toLowerCase().replace(/\s+/g,' ').trim();}
+ function isSocio(e){
+   if(!e||e===document.body||e===document.documentElement)return false;
+   var id=String(e.id||'').toLowerCase(), cls=String(e.className||'').toLowerCase();
+   var h=e.querySelector&&e.querySelector('h1,h2,h3,.section-title,.section-head h2,.card-title');
+   var ht=txt(h), all=txt(e);
+   if(id==='membersection'||id==='sociossection')return true;
+   if(cls.includes('member-section')||cls.includes('socios-section')||cls.includes('rm-member-section-unica'))return true;
+   if(ht.includes('hazte socio')||ht.includes('solicitud de socio'))return true;
+   if(e.querySelector&&e.querySelector('#memberRequestForm,form.member-request-form,form.rm-member-form-final'))return true;
+   if(e.matches&&e.matches('section,.section,.card,.panel,.box,.glass,article,div')&&all.includes('hazte socio')&&(all.includes('nombre')||all.includes('rut')||all.includes('teléfono')||all.includes('telefono')||all.includes('whatsapp')))return true;
+   return false;
+ }
+ function hasInputs(e){
+   return !!(e&&e.querySelectorAll&&e.querySelectorAll('input').length>=2);
+ }
+ function closestBlock(el){
+   var c=el;
+   while(c&&c!==document.body){
+     if(c.matches&&c.matches('section,.section,.card,.panel,.box,.glass,article,div')&&(isSocio(c)||hasInputs(c)))return c;
+     c=c.parentElement;
+   }
+   return el;
+ }
+ function blocks(){
+   var arr=[];
+   document.querySelectorAll('section,.section,.card,.panel,.box,.glass,article,div').forEach(function(e){if(isSocio(e))arr.push(e);});
+   document.querySelectorAll('#memberRequestForm,form.member-request-form,form.rm-member-form-final,input[type="tel"],input[placeholder*="Tel" i],input[placeholder*="tel" i]').forEach(function(e){var b=closestBlock(e); if(b)arr.push(b);});
+   var seen=new Set();
+   return arr.filter(function(b){if(!b||seen.has(b))return false;seen.add(b);return true;}).sort(function(a,b){return a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_PRECEDING?1:-1;});
+ }
+ function preferKeep(bs){
+   var withInputs=bs.filter(hasInputs);
+   var original=withInputs.find(function(b){
+     return txt(b).includes('enviar solicitud por whatsapp') || txt(b).includes('únete a la familia') || txt(b).includes('unete a la familia');
+   });
+   if(original)return original;
+   original=withInputs.find(function(b){return !(b.querySelector&&b.querySelector('#memberRequestForm.rm-member-form-final'));});
+   return original||withInputs[0]||bs[0];
+ }
+ function phone(block){
+   var ph=block&&(block.querySelector('#memberPhoneInput')||block.querySelector('input[type="tel"],input[name*="fono" i],input[name*="telefono" i],input[name*="phone" i],input[placeholder*="tel" i]'));
+   if(!ph)return;
+   ph.id='memberPhoneInput'; ph.name=ph.name||'telefono'; ph.type='tel'; ph.maxLength=12; ph.pattern='\\+569[0-9]{8}'; ph.placeholder='+569XXXXXXXX';
+   if(!ph.value||!ph.value.startsWith('+569'))ph.value='+569';
+   if(ph.dataset.rmSocioDef==='1')return;
+   ph.dataset.rmSocioDef='1';
+   ph.addEventListener('input',function(){var d=ph.value.replace(/\D/g,''); if(d.startsWith('569'))d=d.slice(3); else if(d.startsWith('56'))d=d.slice(2); else if(d.startsWith('9'))d=d.slice(1); ph.value='+569'+d.slice(0,8);});
+ }
+ function bind(block){
+   if(!block||block.dataset.rmSocioBind==='1')return; block.dataset.rmSocioBind='1';
+   function send(e){
+     if(e)e.preventDefault();
+     var nombre=(block.querySelector('input[name*="nombre" i],input[placeholder*="nombre" i]')||{}).value||'';
+     var rut=(block.querySelector('input[name*="rut" i],input[placeholder*="rut" i]')||{}).value||'';
+     var ph=block.querySelector('#memberPhoneInput,input[type="tel"],input[name*="telefono" i],input[placeholder*="tel" i]');
+     var tel=ph?String(ph.value||'').trim():'';
+     var correo=(block.querySelector('input[type="email"],input[name*="correo" i],input[placeholder*="correo" i],input[placeholder*="email" i]')||{}).value||'';
+     if(!/^\+569\d{8}$/.test(tel)){alert('El teléfono debe comenzar con +569 y tener 8 números después.');return;}
+     var msg='Solicitud de socio Club Deportivo Ricardo Méndez%0A'+'Nombre: '+encodeURIComponent(nombre)+'%0A'+'RUT: '+encodeURIComponent(rut)+'%0A'+'Teléfono: '+encodeURIComponent(tel)+'%0A'+'Correo: '+encodeURIComponent(correo);
+     window.open('https://wa.me/569?text='+msg,'_blank');
+   }
+   var f=block.querySelector('form');
+   if(f)f.addEventListener('submit',send);
+   Array.from(block.querySelectorAll('button,a,input[type="submit"]')).forEach(function(b){
+     var t=txt(b); if((t.includes('whatsapp')||t.includes('solicitud')||t.includes('enviar'))&&b.dataset.rmSocioBtn!=='1'){b.dataset.rmSocioBtn='1';b.addEventListener('click',send);}
+   });
+ }
+ function cleanInside(keep){
+   if(!keep)return;
+   var allForms=Array.from(keep.querySelectorAll('form,#memberRequestForm,.rm-member-form-final,.member-request-form'));
+   var keepForm=allForms.find(function(f){return !f.classList.contains('rm-member-form-final') || txt(f).includes('whatsapp');})||allForms[0];
+   allForms.forEach(function(f){if(f!==keepForm&&f.parentElement)f.remove();});
+ }
+ function fix(){
+   var bs=blocks(), keep=preferKeep(bs);
+   if(!keep)return;
+   keep.id='memberSection'; keep.classList.add('rm-socio-original-unico'); keep.hidden=false; keep.style.display=''; keep.style.visibility='visible';
+   phone(keep); bind(keep); cleanInside(keep);
+   blocks().forEach(function(b){if(b!==keep&&!keep.contains(b)&&!b.contains(keep)){b.remove();}});
+   Array.from(document.querySelectorAll('#memberRequestForm,form.rm-member-form-final,form.member-request-form')).forEach(function(f){if(!keep.contains(f))f.remove();});
+ }
+ var obsStarted=false;
+ function obs(){if(obsStarted)return;obsStarted=true;var tm;new MutationObserver(function(){clearTimeout(tm);tm=setTimeout(fix,80);}).observe(document.body,{childList:true,subtree:true});}
+ if(typeof renderPublic==='function'){var old=renderPublic;renderPublic=function(){var r=old.apply(this,arguments);setTimeout(fix,100);setTimeout(fix,1200);return r;};}
+ document.addEventListener('DOMContentLoaded',function(){[100,700,1500,3000,6000,9000].forEach(function(ms){setTimeout(function(){fix();obs();},ms);});});
+ window.addEventListener('pageshow',function(){setTimeout(fix,200);});
+ window.rmFixSocioDuplicadoDefinitivo=fix;
+})();
+
+
+/* =========================================================
+   FIX AUSPICIADORES SOLO FINAL SIN FONDO BLANCO
+   - Oculta carruseles/listados superiores de auspiciadores.
+   - Deja una sola sección al final.
+   - Logos ampliables al pinchar.
+========================================================= */
+(function(){
+  if(window.__RM_AUSPICIADORES_SOLO_FINAL_SIN_BLANCO__) return;
+  window.__RM_AUSPICIADORES_SOLO_FINAL_SIN_BLANCO__ = true;
+
+  function main(){
+    return document.querySelector('main') || document.querySelector('#app') || document.body;
+  }
+
+  function sponsorSrc(img){
+    return String((img && (img.getAttribute('src') || img.src || '')) || '').trim();
+  }
+
+  function isClubLogo(src){
+    return !src || src.includes('logo_ricardo_mendez') || src.includes('escudo') || src.includes('favicon');
+  }
+
+  function collectSponsors(){
+    var selectors = [
+      '#sponsorsBottomSection img',
+      '.sponsors-final-grid img',
+      '.sponsors-grid img',
+      '.sponsors-marquee img',
+      '.sponsors-track img',
+      '.sponsor-card img',
+      '.sponsor-item img',
+      '.sponsor-logo img',
+      '[class*="sponsor"] img',
+      '[class*="auspiciador"] img',
+      'img[alt*="auspiciador" i]',
+      'img[alt*="sponsor" i]'
+    ].join(',');
+
+    var seen = new Set();
+    var out = [];
+
+    document.querySelectorAll(selectors).forEach(function(img){
+      var src = sponsorSrc(img);
+      if(isClubLogo(src)) return;
+      if(seen.has(src)) return;
+      seen.add(src);
+      out.push({
+        src: src,
+        alt: img.alt || img.getAttribute('alt') || 'Auspiciador'
+      });
+    });
+
+    return out;
+  }
+
+  function hideSponsorCarouselsExceptFinal(){
+    document.querySelectorAll(
+      '.sponsors-marquee,.sponsors-track,.sponsors-carousel,.sponsors-slider,.sponsors-strip,.sponsors-top,' +
+      '.auspiciadores-marquee,.auspiciadores-track,.auspiciadores-carousel,.auspiciadores-slider,' +
+      '[class*="sponsor"][class*="marquee"],[class*="sponsor"][class*="carousel"],[class*="sponsor"][class*="slider"],[class*="sponsor"][class*="track"],' +
+      '[class*="auspiciador"][class*="marquee"],[class*="auspiciador"][class*="carousel"],[class*="auspiciador"][class*="slider"],[class*="auspiciador"][class*="track"]'
+    ).forEach(function(el){
+      if(el.closest('#sponsorsBottomSection')) return;
+      el.classList.add('rm-sponsor-carousel-hidden');
+      el.style.display = 'none';
+      el.style.visibility = 'hidden';
+      el.style.height = '0';
+      el.style.overflow = 'hidden';
+    });
+
+    // Ocultar secciones superiores que tengan título auspiciadores, excepto la final.
+    document.querySelectorAll('section,.section,.card,.panel,.box,.glass,article').forEach(function(el){
+      if(el.id === 'sponsorsBottomSection' || el.closest('#sponsorsBottomSection')) return;
+      var text = String(el.textContent || '').toLowerCase();
+      var hasTitle = text.includes('auspiciadores oficiales') || text.includes('auspiciadores') || text.includes('sponsors');
+      var hasImgs = el.querySelectorAll && el.querySelectorAll('img').length >= 2;
+      if(hasTitle && hasImgs){
+        el.classList.add('rm-sponsor-carousel-hidden');
+        el.style.display = 'none';
+        el.style.visibility = 'hidden';
+        el.style.height = '0';
+        el.style.overflow = 'hidden';
+      }
+    });
+  }
+
+  function ensureLightbox(){
+    var modal = document.getElementById('rmSponsorLightbox');
+    if(!modal){
+      modal = document.createElement('div');
+      modal.id = 'rmSponsorLightbox';
+      modal.className = 'rm-sponsor-lightbox';
+      modal.innerHTML = '<button type="button" class="rm-sponsor-lightbox-close" aria-label="Cerrar">×</button><img alt="Auspiciador ampliado"><p>Haz clic fuera de la imagen para cerrar</p>';
+      document.body.appendChild(modal);
+      modal.addEventListener('click', function(e){
+        if(e.target === modal || e.target.classList.contains('rm-sponsor-lightbox-close')){
+          modal.classList.remove('open');
+        }
+      });
+      document.addEventListener('keydown', function(e){
+        if(e.key === 'Escape') modal.classList.remove('open');
+      });
+    }
+    return modal;
+  }
+
+  function bindZoom(){
+    var modal = ensureLightbox();
+    var modalImg = modal.querySelector('img');
+
+    document.querySelectorAll('#sponsorsBottomSection img,.sponsors-final-grid img').forEach(function(img){
+      if(img.dataset.rmSponsorFinalZoom === '1') return;
+      img.dataset.rmSponsorFinalZoom = '1';
+      img.style.cursor = 'zoom-in';
+      img.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        modalImg.src = img.src || img.getAttribute('src') || '';
+        modalImg.alt = img.alt || 'Auspiciador';
+        modal.classList.add('open');
+      }, false);
+    });
+  }
+
+  function ensureFinalSponsors(){
+    var sponsors = collectSponsors();
+
+    var section = document.getElementById('sponsorsBottomSection');
+    if(!section){
+      section = document.createElement('section');
+      section.id = 'sponsorsBottomSection';
+      section.className = 'section sponsors-bottom-section rm-sponsors-final-section';
+    }
+
+    section.classList.add('rm-sponsors-final-section','rm-sponsors-sin-fondo-blanco');
+    section.style.display = 'block';
+    section.style.visibility = 'visible';
+    section.style.opacity = '1';
+    section.hidden = false;
+
+    section.innerHTML =
+      '<div class="section-head rm-sponsors-final-head">' +
+        '<h2>★ Auspiciadores Oficiales ★</h2>' +
+        '<p>Pincha un logo para ampliarlo</p>' +
+      '</div>' +
+      '<div id="sponsorsFinalGrid" class="sponsors-final-grid rm-sponsors-grid-final"></div>';
+
+    var grid = section.querySelector('#sponsorsFinalGrid');
+
+    if(!sponsors.length){
+      grid.innerHTML = '<div class="sponsors-empty-final">Auspiciadores pendientes de cargar desde Admin.</div>';
+    }else{
+      sponsors.forEach(function(s){
+        var card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'sponsor-final-card rm-sponsor-no-white-card';
+        card.innerHTML = '<img src="' + s.src + '" alt="' + s.alt + '">';
+        grid.appendChild(card);
+      });
+    }
+
+    main().appendChild(section);
+    bindZoom();
+  }
+
+  function run(){
+    var saved = collectSponsors();
+    hideSponsorCarouselsExceptFinal();
+    ensureFinalSponsors();
+
+    // Si un render posterior crea otro carrusel, volver a ordenar.
+    setTimeout(function(){
+      hideSponsorCarouselsExceptFinal();
+      ensureFinalSponsors();
+    }, 900);
+  }
+
+  if(typeof renderPublic === 'function'){
+    var old = renderPublic;
+    renderPublic = function(){
+      var r = old.apply(this, arguments);
+      setTimeout(run, 120);
+      setTimeout(run, 1200);
+      return r;
+    };
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(run, 120);
+    setTimeout(run, 1200);
+    setTimeout(run, 2600);
+    setTimeout(run, 5200);
+  });
+
+  window.addEventListener('pageshow', function(){ setTimeout(run, 250); });
+  window.rmAuspiciadoresSoloFinalSinBlanco = run;
+})();
