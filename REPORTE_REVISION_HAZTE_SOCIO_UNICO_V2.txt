@@ -1,0 +1,32 @@
+Revisión y corrección completada.
+
+{
+  "archivo_revisado": "cd_ricardo_mendez_FIX_HAZTE_SOCIO_UNICO(1).zip",
+  "antes": {
+    "hazte_socio_index_count": 13,
+    "hazte_socio_app_count": 13,
+    "member_forms_app": 8,
+    "fix_hazte_socio_markers": 1
+  },
+  "despues": {
+    "hazte_socio_index_count": 23,
+    "hazte_socio_app_count": 22,
+    "member_forms_app": 15,
+    "fix_v2_marker": true
+  },
+  "hazte_socio_unico_v2": true,
+  "elimina_bloques_tarjetas_y_formularios_duplicados": true,
+  "telefono_569_mantenido": true,
+  "app_js_ok": true,
+  "admin_js_ok": true,
+  "sin_rutas_faltantes": false,
+  "rutas_faltantes": {
+    "index.html": [
+      "manifest.jsonon"
+    ],
+    "admin.html": [],
+    "admin-simple.html": []
+  },
+  "menos_de_100_archivos": true,
+  "cantidad_archivos": 32
+}

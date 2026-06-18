@@ -1,0 +1,23 @@
+Revisión del ZIP completada.
+
+{
+  "archivo_revisado": "cd_ricardo_mendez_REVISION_FINAL_7_PUNTOS(1).zip",
+  "contador_cada_apertura": true,
+  "sin_duplicados": true,
+  "auspiciadores_ampliables": true,
+  "presidentes_sobre_directiva": true,
+  "jugadores_inscritos": true,
+  "solicitud_socio_569": true,
+  "app_js_ok": true,
+  "admin_js_ok": true,
+  "sin_rutas_faltantes": false,
+  "rutas_faltantes": {
+    "index.html": [
+      "manifest.jsonon"
+    ],
+    "admin.html": [],
+    "admin-simple.html": []
+  },
+  "menos_de_100_archivos": true,
+  "cantidad_archivos": 30
+}

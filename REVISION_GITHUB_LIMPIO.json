@@ -1,0 +1,11 @@
+{
+  "cantidad_archivos_final": 22,
+  "menos_de_100": true,
+  "app_js_ok": true,
+  "admin_js_ok": true,
+  "rutas_faltantes": {
+    "index.html": [],
+    "admin.html": [],
+    "admin-simple.html": []
+  }
+}
